@@ -1,0 +1,166 @@
+import sqlite3
+
+def inicializar_db():
+    try:
+        conn = sqlite3.connect('cajero.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario TEXT UNIQUE NOT NULL,
+                pin TEXT NOT NULL,
+                saldo REAL NOT NULL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Error al inicializar la base de datos: {e}")
+
+class Cajero:
+    def __init__(self):
+        self.user_logueado = None
+        inicializar_db()
+
+    def conectar(self):
+        return sqlite3.connect('cajero.db')
+
+    def crear_usuario(self):
+        print("\n--- REGISTRO DE NUEVO USUARIO ---")
+        nombre = input("Ingrese su nombre de usuario (solo letras): ").strip()
+        
+        # Validación .isalpha()
+        if not nombre.isalpha():
+            print("⚠️ Error: El nombre de usuario solo debe contener letras.")
+            return
+
+        pin = input("Cree un PIN de 4 dígitos: ").strip()
+        if not pin.isdigit() or len(pin) != 4:
+            print("⚠️ Error: El PIN debe ser de 4 números.")
+            return
+
+        try:
+            conn = self.conectar()
+            cursor = conn.cursor()
+            # Saldo inicial de cortesía o en 0
+            cursor.execute("INSERT INTO usuarios (usuario, pin, saldo) VALUES (?, ?, ?)", 
+                           (nombre, pin, 0.0))
+            conn.commit()
+            conn.close()
+            print(f"✅ Usuario '{nombre}' creado con éxito. Ahora puedes ingresar.")
+        except sqlite3.IntegrityError:
+            print("❌ Error: Ese nombre de usuario ya existe.")
+        except Exception as e:
+            print(f"❌ Ocurrió un error inesperado: {e}")
+
+    def recuperar_pin(self, usuario_objetivo):
+        print(f"\n--- RESTABLECER PIN ({usuario_objetivo}) ---")
+        nuevo_pin = input("Ingrese nuevo PIN (4 números): ").strip()
+        if nuevo_pin.isdigit() and len(nuevo_pin) == 4:
+            try:
+                conn = self.conectar()
+                cursor = conn.cursor()
+                cursor.execute("UPDATE usuarios SET pin = ? WHERE usuario = ?", (nuevo_pin, usuario_objetivo))
+                conn.commit()
+                conn.close()
+                print("✅ PIN actualizado.")
+            except Exception as e:
+                print(f"Error: {e}")
+        else:
+            print("⚠️ PIN inválido.")
+
+    def login(self):
+        intentos = 0
+        while intentos < 3:
+            print(f"\n--- LOGIN (Intento {intentos + 1}/3) ---")
+            u = input("Usuario: ").strip()
+            p = input("PIN: ").strip()
+
+            try:
+                conn = self.conectar()
+                cursor = conn.cursor()
+                cursor.execute("SELECT usuario FROM usuarios WHERE usuario = ? AND pin = ?", (u, p))
+                resultado = cursor.fetchone()
+                conn.close()
+
+                if resultado:
+                    self.user_logueado = resultado[0]
+                    print(f"✅ Bienvenido {self.user_logueado}")
+                    return True
+                else:
+                    print("❌ Datos incorrectos.")
+                    intentos += 1
+                    user_fallido = u # Guardamos el usuario para la posible recuperación
+            except Exception as e:
+                print(f"Error: {e}")
+                return False
+
+        print("\n🚫 Bloqueado tras 3 intentos.")
+        op = input("¿Deseas cambiar tu contraseña? (s/n): ").lower()
+        if op == 's':
+            self.recuperar_pin(user_fallido)
+        return False
+
+    def consultar_saldo(self):
+        conn = self.conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT saldo FROM usuarios WHERE usuario = ?", (self.user_logueado,))
+        saldo = cursor.fetchone()[0]
+        conn.close()
+        print(f"\n💰 Tu saldo es: ${saldo:,.2f}")
+
+    def retirar_dinero(self):
+        try:
+            monto = input("Monto a retirar: ")
+            if not monto.replace('.', '', 1).isdigit():
+                print("⚠️ Ingrese un número válido.")
+                return
+            
+            monto = float(monto)
+            conn = self.conectar()
+            cursor = conn.cursor()
+            cursor.execute("SELECT saldo FROM usuarios WHERE usuario = ?", (self.user_logueado,))
+            actual = cursor.fetchone()[0]
+
+            if monto > actual:
+                print("❌ Fondos insuficientes.")
+            else:
+                nuevo = actual - monto
+                cursor.execute("UPDATE usuarios SET saldo = ? WHERE usuario = ?", (nuevo, self.user_logueado))
+                conn.commit()
+                print(f"✅ Retiro realizado. Saldo: ${nuevo:,.2f}")
+            conn.close()
+        except Exception as e:
+            print(f"Error: {e}")
+
+    def menu_cajero(self):
+        while True:
+            print(f"\n--- SESIÓN: {self.user_logueado} ---")
+            print("1. Consultar Saldo\n2. Retirar Dinero\n3. Salir")
+            op = input("Seleccione: ")
+            if op == "1": self.consultar_saldo()
+            elif op == "2": self.retirar_dinero()
+            elif op == "3": break
+
+def menu_principal():
+    cajero = Cajero()
+    while True:
+        print("\n========== BIENVENIDO AL BANCO ==========")
+        print("1. Crear Usuario")
+        print("2. Ingresar")
+        print("3. Salir")
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            cajero.crear_usuario()
+        elif opcion == "2":
+            if cajero.login():
+                cajero.menu_cajero()
+        elif opcion == "3":
+            print("Gracias por usar el sistema. ¡Adiós!")
+            break
+        else:
+            print("⚠️ Opción no válida.")
+
+if __name__ == "__main__":
+    menu_principal()

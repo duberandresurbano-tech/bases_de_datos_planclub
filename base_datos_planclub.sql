@@ -219,17 +219,17 @@ CREATE TABLE `mesa` (
 -- Volcado de datos para la tabla `mesa`
 --
 
-INSERT INTO `mesa` (`ID_MESA`, `NUMERO`, `CAPACIDAD`, `ZONA`, `ESTADO`) VALUES
-('M001', 1, 4, 'terraza', 'Ocupado'),
-('M002', 2, 4, 'vip', 'Ocupado'),
-('M003', 3, 2, 'dj', 'Fuera de servicio'),
-('M004', 4, 2, 'barra', 'Disponible'),
-('M005', 5, 6, 'general', 'Ocupado'),
-('M006', 6, 6, 'terraza', 'Disponible'),
-('M007', 7, 4, 'general', 'Ocupado'),
-('M008', 8, 4, 'general', 'Disponible'),
-('M009', 9, 8, 'terraza', 'Disponible'),
-('M010', 10, 8, 'general', 'Ocupado');
+INSERT INTO `mesa` (`ID_MESA`,`ID_RESERVA`, `NUMERO`, `CAPACIDAD`, `ZONA`, `ESTADO`) VALUES
+('M001',`RES001`, 1, 4, 'terraza', 'Ocupado'),
+('M002',`RES002`, 2, 4, 'vip', 'Ocupado'),
+('M003',`RES003`, 3, 2, 'dj', 'Fuera de servicio'),
+('M004',`RES004`, 4, 2, 'barra', 'Disponible'),
+('M005',`RES005`, 5, 6, 'general', 'Ocupado'),
+('M006',`RES006`, 6, 6, 'terraza', 'Disponible'),
+('M007',`RES007`, 7, 4, 'general', 'Ocupado'),
+('M008',`RES008`, 8, 4, 'general', 'Disponible'),
+('M009',`RES009`, 9, 8, 'terraza', 'Disponible'),
+('M010',`RES010`, 10, 8, 'general', 'Ocupado');
 
 -- --------------------------------------------------------
 
@@ -500,16 +500,16 @@ CREATE TABLE `telefono` (
 --
 
 INSERT INTO `telefono` (`ID_TELEFONO`, `ID_USUARIO`, `NUMERO`) VALUES
-('TEL001', 'USU002', 2147483647),
-('TEL002', 'USU002', 984945),
-('TEL003', 'USU001', 2147483647),
-('TEL004', 'USU005', 2147483647),
-('TEL005', 'USU005', 2147483647),
-('TEL006', 'USU005', 4531622),
-('TEL007', 'USU008', 2147483647),
-('TEL008', 'USU008', 1651455),
-('TEL009', 'USU001', 3216544),
-('TEL010', 'USU003', 2147483647);
+('TEL001', 'USU002', 3245697531),
+('TEL002', 'USU002', 3486215397),
+('TEL003', 'USU001', 3012369745),
+('TEL004', 'USU005', 3003159631),
+('TEL005', 'USU005', 3012369745),
+('TEL006', 'USU005', 3697412586),
+('TEL007', 'USU008', 3267896452),
+('TEL008', 'USU008', 3000257896),
+('TEL009', 'USU001', 3000365478),
+('TEL010', 'USU003', 3030302569);
 
 -- --------------------------------------------------------
 
@@ -672,7 +672,7 @@ ALTER TABLE `mensajes`
 --
 ALTER TABLE `mesa`
   ADD PRIMARY KEY (`ID_MESA`);
-
+  ADD KEY `fk_reserva` (`ID_RESERVA`),
 --
 -- Indices de la tabla `pago`
 --
